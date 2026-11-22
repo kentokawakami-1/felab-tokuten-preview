@@ -1146,6 +1146,8 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
 .cb-right::after{display:none}
 .cb-leaf{will-change:transform}
 .cb-leaf .cb-face{will-change:opacity}
+.brand-logo{display:block;height:40px;width:auto}
+.certificate .c-brand-logo{display:block;height:30px;width:auto}
 </style>
 </head>
 <body>
@@ -1183,8 +1185,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
   <div class="vault-wrap">
     <div class="vault-dim" aria-hidden="true"></div>
     <div class="brand">
-      <svg class="brand-mark" viewBox="0 0 26 30" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="24" height="28"/><path d="M7 29V9h12v20M10 14h6M10 19h6"/></svg>
-      <div class="brand-txt"><small>Financial Education LABO</small><b>FEラボ</b></div>
+      <img class="brand-logo" src="art/logo.png" alt="FEラボ Financial Education LABO" width="480" height="231">
     </div>
     <h1 class="vault-title" id="vaultTitle"><span class="vt-kicker">セミナー参加者だけの</span><span class="vt-main"><span class="num">7</span>大特典</span></h1>
     <p class="vault-sub" id="vaultSub">講師がお伝えした合言葉で開きます</p>
@@ -1204,7 +1205,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
     <input class="dial-input" id="dialInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" aria-label="合言葉を数字で入力" hidden>
     <p class="vault-msg" id="vaultMsg" role="alert" aria-live="assertive"></p>
     <div class="vault-actions">
-      <button class="btn btn-gold btn-hold" id="openBtn" type="button"><span class="hold-fill"></span><span class="hold-label">長押しで金庫を開ける</span></button>
+      <button class="btn btn-gold btn-hold" id="openBtn" type="button"><span class="hold-fill"></span><span class="hold-label">金庫を開ける</span></button>
     </div>
   </div>
 </section>
@@ -1212,14 +1213,13 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
 <!-- =================== 2. お披露目 =================== -->
 <section class="screen" id="reveal" aria-labelledby="revealTitle">
   <div class="reveal-wrap">
-    <p class="reveal-pre">金庫の中に</p>
-    <h1 class="reveal-count" id="revealTitle"><span class="rc-main"><em>7</em>冊の特典</span><span class="rc-rest">が入っていました</span></h1>
+    <h1 class="reveal-count" id="revealTitle"><span class="rc-main"><em>7</em>つの特典</span><span class="rc-rest">が入っていました</span></h1>
     <p class="reveal-sub">どれもセミナー参加者のためだけに作った冊子です</p>
     <div class="fan" id="fan" aria-hidden="true"></div>
     <div class="reveal-actions">
       <button class="btn btn-gold" id="toQuiz" type="button">読む順番を診断する（30秒）</button>
-      <button class="btn btn-ghost" id="skipQuiz" type="button">診断せずに7冊を見る</button>
-      <p class="reveal-note">4つの質問に答えると、7冊を読む順番があなた向けに並び替わります</p>
+      <button class="btn btn-ghost" id="skipQuiz" type="button">診断せずに7つを見る</button>
+      <p class="reveal-note">4つの質問に答えると、7つの特典を読む順番があなた向けに並び替わります</p>
     </div>
   </div>
 </section>
@@ -1253,8 +1253,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
   <div class="lib-wrap">
     <div class="lib-head">
       <div class="brand" style="color:var(--bronze)">
-        <svg class="brand-mark" viewBox="0 0 26 30" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="24" height="28"/><path d="M7 29V9h12v20M10 14h6M10 19h6"/></svg>
-        <div class="brand-txt"><small>Financial Education LABO</small><b>FEラボ</b></div>
+        <img class="brand-logo" src="art/logo.png" alt="FEラボ Financial Education LABO" width="480" height="231">
       </div>
     </div>
 
@@ -1264,8 +1263,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
       <div class="content">
         <header class="masthead">
           <div class="c-brand">
-            <svg class="c-brand-mark" viewBox="0 0 26 30" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="1" y="1" width="24" height="28"/><path d="M7 29V9h12v20M10 14h6M10 19h6"/></svg>
-            <div><b>FEラボ</b><small>FINANCIAL EDUCATION LABO</small></div>
+            <img class="c-brand-logo" src="art/logo.png" alt="FEラボ Financial Education LABO" width="480" height="231">
           </div>
           <div class="serial"><strong>CERTIFICATE</strong><span id="certSerial">No. FE-0000-000000</span></div>
         </header>
@@ -1305,7 +1303,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
       <p class="sec-lead" id="shelfLead">上から順に読むと、いちばん無理なく進められます</p>
       <div class="progress" aria-live="polite">
         <div class="progress-bar"><i id="progBar"></i></div>
-        <div class="pnum"><b id="progNum">0</b><small>/ 7冊 開封</small></div>
+        <div class="pnum"><b id="progNum">0</b><small>/ 7つ 開封</small></div>
       </div>
       <button class="btn btn-ink" id="quizEntry" type="button" style="margin-top:14px" hidden>あなたに合う順番を診断する（30秒）</button>
       <ol class="shelf" id="shelf"></ol>
@@ -1396,7 +1394,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
     </div>
   </div>
   <div class="sheet-learn">
-    <h4>この1冊で分かること</h4>
+    <h4>この特典で分かること</h4>
     <ul id="sheetPoints"></ul>
   </div>
   <p class="sheet-caveat" id="sheetCaveat" hidden></p>
@@ -1439,8 +1437,8 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
 <!-- 全冊開封 -->
 <div class="complete" id="complete" role="dialog" aria-modal="true" aria-labelledby="completeTitle">
   <div class="complete-card">
-    <div class="seal stamp">全7冊<br>開封</div>
-    <h2 id="completeTitle">7冊すべて開封しました</h2>
+    <div class="seal stamp">全7つ<br>開封</div>
+    <h2 id="completeTitle">7つすべて開封しました</h2>
     <p id="completeLead">ここまで読み進めた方は、次は実際に手を動かす段階です。</p>
     <div class="btns">
       <a class="btn btn-gold" id="completeCta" href="#" target="_blank" rel="noopener" hidden>LINEで個別相談を申し込む</a>
@@ -1847,7 +1845,7 @@ dialInput.addEventListener("input",()=>{
 
 let opening=false;
 const openBtn=document.getElementById("openBtn"), holdRing=document.querySelector(".vault-progress .bar");
-const HOLD_MS=2300; let holding=false, holdP=0, holdRaf=null, backRaf=null;
+const HOLD_MS=1500; let holding=false, holdP=0, holdRaf=null, backRaf=null;
 const cam=document.getElementById("cam"), holdSpark=document.getElementById("holdSpark"), vaultWrap=stage.parentElement;
 // 線は最初は速く、終わりに近づくほどゆっくり進む（holdP は時間の割合のまま持つ）
 const easeHold=p=>1-Math.pow(1-p,2.1);
@@ -1890,12 +1888,8 @@ function holdCancel(){
   backRaf=requestAnimationFrame(back);
   if(was<.5){ vaultMsg.style.color="var(--muted)"; vaultMsg.textContent="ボタンを押したまま、離さずにお待ちください"; }
 }
-openBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); try{ openBtn.setPointerCapture(e.pointerId); }catch(_){} holdBegin(); });
-["pointerup","pointercancel","lostpointercapture"].forEach(ev=>openBtn.addEventListener(ev,holdCancel));
+openBtn.addEventListener("click",()=>holdBegin()); // タップ1回で開く（演出は自動で流れる）
 openBtn.addEventListener("contextmenu",e=>e.preventDefault());
-openBtn.addEventListener("keydown",e=>{ if((e.key===" "||e.key==="Enter")&&!e.repeat){ e.preventDefault(); holdBegin(); } });
-openBtn.addEventListener("keyup",e=>{ if(e.key===" "||e.key==="Enter") holdCancel(); });
-openBtn.addEventListener("click",e=>{ if(e.detail===0 && !holding) tryOpen(); }); // 読み上げソフトなどからの操作
 function tryOpen(){
   if(opening) return;
   audio();
@@ -2054,7 +2048,7 @@ function finish(){
 function analyzing(){
   show("analyzing");
   const t=document.getElementById("anText");
-  const lines=["回答を読み取っています","7冊の中身と照らし合わせています","あなたの読む順番を決めています"];
+  const lines=["回答を読み取っています","7つの特典の中身と照らし合わせています","あなたの読む順番を決めています"];
   lines.forEach((l,i)=>setTimeout(()=>{ t.textContent=l; sfx.tick(); },i*700));
   setTimeout(()=>{ renderLibrary(true); show("library"); }, 2100);
 }
@@ -2090,7 +2084,7 @@ function renderLibrary(fresh){
     setSim(T.monthly);
   } else {
     cert.hidden=true;
-    document.querySelector("#shelfTitle span").textContent="7冊の特典";
+    document.querySelector("#shelfTitle span").textContent="7つの特典";
     document.getElementById("shelfLead").textContent="診断すると、あなたに合う読む順番に並び替わります";
     setSim(30000);
   }
@@ -2151,7 +2145,7 @@ const sheet=document.getElementById("sheet"), sheetBack=document.getElementById(
 function openSheet(id,no,rowBtn){
   const b=BOOKS.find(x=>x.id===id); sheetBook=b; lastFocus=document.activeElement;
   document.getElementById("sheetImg").src=coverSrc(id);
-  document.getElementById("sheetNo").textContent = state.result ? `あなたの${no}冊目` : `特典 ${id}`;
+  document.getElementById("sheetNo").textContent = state.result ? `あなたの${no}つ目` : `特典 ${id}`;
   document.getElementById("sheetTitle").textContent=b.title;
   document.getElementById("sheetPoints").innerHTML=b.points.map(p=>`<li>${p}</li>`).join("");
   const cv=document.getElementById("sheetCaveat"); cv.textContent=b.caveat; cv.hidden=!b.caveat;
@@ -2350,7 +2344,7 @@ function closeReader(){
   closeSheet();
   // 開封印を押す演出
   const st=document.querySelector(`.book-stamp[data-stamp="${justOpened}"]`);
-  if(st && justOpened){ st.classList.add("stamp"); sfx.stamp(); vibrate(20); justOpened=null; if(state.opened.length<BOOKS.length) toast(`${state.opened.length}冊目を開封しました`); }
+  if(st && justOpened){ st.classList.add("stamp"); sfx.stamp(); vibrate(20); justOpened=null; if(state.opened.length<BOOKS.length) toast(`${state.opened.length}つ目を開封しました`); }
   maybeComplete();
 }
 let justOpened=null;

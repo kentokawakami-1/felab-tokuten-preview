@@ -2031,7 +2031,6 @@ function renderQ(){
     body.querySelector(".q").style.animation="rise .5s var(--ease-out) both";
   }
   const h=body.querySelector("h2"); blurIn(h,{step:22});
-  document.getElementById("quizStep").textContent=`${qi+1} / ${STEPS}`;
   if(h && qi>0) h.focus({preventScroll:true});
 }
 document.getElementById("quizBack").addEventListener("click",()=>{ clearTimeout(qTimer); advancing=false; if(qi>0){ qi--; renderQ(); } });

@@ -1361,7 +1361,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
 
     <div class="lib-foot">
       <button class="link-btn" id="retakeBtn" type="button">診断をやり直す</button>
-      <button class="link-btn" id="replayBtn" type="button">金庫を開ける演出をもう一度見る</button>
+      <button class="link-btn" id="replayBtn" type="button">はじめに戻る</button>
     </div>
     <p class="disclaimer">本ページおよび特典の内容は一般的な情報提供を目的としたもので、特定の金融商品の購入を勧めるものではありません。投資の最終判断はご自身でお願いします。</p>
   </div>
@@ -1461,6 +1461,8 @@ const CONFIG = {
   // 保存データの版。中身を大きく変えたら数字を上げると、全員が金庫からやり直しになります
   storageVersion: 1,
 };
+// 入会者向け：URLに ?member=1 を付けて配ると、個別相談の案内を一切出さない（同じブラウザでは次回以降も）
+(()=>{ let m=false; try{ const q=new URLSearchParams(location.search).get("member"); if(q==="1") localStorage.setItem("felab_member","1"); if(q==="0") localStorage.removeItem("felab_member"); m=localStorage.getItem("felab_member")==="1"; }catch(_){ m=new URLSearchParams(location.search).get("member")==="1"; } if(m) CONFIG.consultUrl=""; })();
 // パソコンにはLINEアプリのトークを直接開く仕組みがないので、公式アカウントのページ（QRコード）を開く
 if(!(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints>1 && /Macintosh/.test(navigator.userAgent))) && /line\.me\/R\/oaMessage\//.test(CONFIG.consultUrl)){
   CONFIG.consultUrl="https://line.me/R/ti/p/%40219bkopw";
@@ -1515,7 +1517,7 @@ const drivePreview = d => `https://drive.google.com/file/d/${d}/preview`;
    ========================================================= */
 const QUESTIONS = [
   { key:"age", title:"あなたの年代を教えてください",
-    options:[["20s","20代"],["30s","30代"],["40s","40代"],["50s","50代以上"]] },
+    options:[["10s","10代"],["20s","20代"],["30s","30代"],["40s","40代"],["50s","50代"],["60s","60代"],["70s","70代以上"]] },
   { key:"exp", title:"投資の経験はありますか？",
     options:[["none","まだ何もしていない"],["little","NISAなどを少し始めた"],["active","いくつか運用している"]] },
   { key:"assets", title:"今の貯金・投資の合計は、だいたいどのくらい？",
@@ -1526,7 +1528,7 @@ const QUESTIONS = [
 ];
 // 各回答が、どの冊子の優先度を上げるか（冊子ID: 点数）
 const WEIGHTS = {
-  age:{ "20s":{4:3,7:2,3:1}, "30s":{6:3,5:2,3:1}, "40s":{5:3,1:2,6:1}, "50s":{5:3,6:2,1:2} },
+  age:{ "10s":{4:3,7:2,3:1}, "20s":{4:3,7:2,3:1}, "30s":{6:3,5:2,3:1}, "40s":{5:3,1:2,6:1}, "50s":{5:3,6:2,1:2}, "60s":{5:3,6:2,1:2}, "70s":{5:3,6:2,1:2} },
   exp:{ none:{2:6,3:3,6:2}, little:{6:3,5:2,3:2}, active:{1:3,7:3,5:2,2:-4} },
   assets:{ "lt100":{4:3,3:2,2:1}, "100-500":{6:2,3:1,4:1}, "500-1000":{7:2,1:2,5:1}, "gt1000":{7:3,1:2,5:2,4:-1} },
   concern:{ start:{2:5,3:2}, retire:{5:3,6:3}, tax:{5:5,6:1}, inflation:{1:5,6:1}, grow:{7:5,4:2} },
@@ -1994,8 +1996,8 @@ const STEPS = QUESTIONS.length + 1; // 最後に名前
 function startQuiz(){ clearTimeout(qTimer); advancing=false; clearReveal(); qi=0; answers={}; nameDraft=state.name||""; show("quiz"); renderQ(); }
 function renderQ(){
   const prog=document.getElementById("quizProgress");
-  prog.innerHTML=Array.from({length:STEPS},(_,i)=>`<i class="${i<=qi?"on":""}"></i>`).join("");
-  document.getElementById("quizStep").textContent=`${qi+1} / ${STEPS}`;
+  prog.innerHTML=Array.from({length:QUESTIONS.length},(_,i)=>`<i class="${i<=qi?"on":""}"></i>`).join("");
+  document.getElementById("quizStep").textContent= qi<QUESTIONS.length ? `${qi+1} / ${QUESTIONS.length}` : "最後に";
   document.getElementById("quizBack").disabled = qi===0;
   const body=document.getElementById("qBody"), foot=document.getElementById("quizFoot");
   foot.innerHTML="";
@@ -2376,7 +2378,7 @@ document.getElementById("quizEntry").addEventListener("click",startQuiz);
 document.getElementById("replayBtn").addEventListener("click",()=>{
   resetVault(); show("vault");
   String(CONFIG.passcode).split("").forEach((d,i)=>setDigit(i,+d,false));
-  vaultMsg.style.color="var(--muted)"; vaultMsg.textContent="合言葉は合わせてあります。ボタンを長押ししてください";
+  vaultMsg.style.color="var(--muted)"; vaultMsg.textContent="合言葉は合わせてあります。ボタンを押してください";
 });
 
 /* =========================================================
@@ -2419,7 +2421,7 @@ const delayMan=v=>Math.round(v/10000);
 const delayYen=v=>Math.round(v).toLocaleString("ja-JP");
 function nearestDelayOption(values,target){return values.reduce((a,b)=>Math.abs(b-target)<Math.abs(a-target)?b:a);}
 function delayDefaults(){
-  const ageMap={"20s":27,"30s":32,"40s":45,"50s":55};
+  const ageMap={"10s":22,"20s":27,"30s":32,"40s":45,"50s":55,"60s":55,"70s":55};
   const typeMonthly=state.result&&TYPES[state.result.type]?TYPES[state.result.type].monthly:30000;
   return {age:ageMap[state.answers&&state.answers.age]||32,goal:20000000,monthly:nearestDelayOption([10000,30000,50000,100000],typeMonthly),start:12};
 }
@@ -2504,7 +2506,7 @@ function delayReframes(result){
   const oneMonth=result.differences[1];
   return `<div class="delay-reframes"><div class="delay-reframe">1か月待つごとに<b>約${delayMan(oneMonth).toLocaleString("ja-JP")}<small>万円</small></b></div><div class="delay-reframe">1日あたり<b>約${delayYen(oneMonth/30)}<small>円</small></b></div><div class="delay-reframe">1年遅れを取り戻すには、毎月<b>あと${delayYen(result.recoveryMonthly)}<small>円の積立</small></b></div></div>`;
 }
-function delayExitHtml(){return `<div class="delay-scene delay-exit"><p class="delay-kicker dm-in">始める時期を決める</p><h1>${kt("いちばん早いのは、")}<br>${kt("今日。","kt-big",.5)}</h1><p class="delay-subline dm-in" style="--d:1.1s">自分に合った始め方を知りたい方は、個別相談で一緒に考えましょう。</p><div class="delay-actions dm-in" style="--d:1.4s">${CONFIG.consultUrl?`<a class="btn btn-gold" id="delayConsult" href="${CONFIG.consultUrl}" target="_blank" rel="noopener">LINEで個別相談を申し込む</a>`:""}<button class="btn ${CONFIG.consultUrl?"btn-ghost":"btn-gold"}" id="delayToSim" type="button">もっと詳しくシミュレーションする</button><button class="btn btn-ghost" id="delayHome" type="button">ホームに戻る</button></div></div>`;}
+function delayExitHtml(){return `<div class="delay-scene delay-exit"><p class="delay-kicker dm-in">始める時期を決める</p><h1>${kt("いちばん早いのは、")}<br>${kt("今日。","kt-big",.5)}</h1>${CONFIG.consultUrl?`<p class="delay-subline dm-in" style="--d:1.1s">自分に合った始め方を知りたい方は、個別相談で一緒に考えましょう。</p>`:""}<div class="delay-actions dm-in" style="--d:1.4s">${CONFIG.consultUrl?`<a class="btn btn-gold" id="delayConsult" href="${CONFIG.consultUrl}" target="_blank" rel="noopener">LINEで個別相談を申し込む</a>`:""}<button class="btn ${CONFIG.consultUrl?"btn-ghost":"btn-gold"}" id="delayToSim" type="button">もっと詳しくシミュレーションする</button><button class="btn btn-ghost" id="delayHome" type="button">ホームに戻る</button></div></div>`;}
 function bindDelayExit(result){
   const consult=document.getElementById("delayConsult");if(consult)consult.addEventListener("click",e=>{e.stopPropagation();log("cta",{});});
   document.getElementById("delayToSim").addEventListener("click",e=>{e.stopPropagation();applyDelayToSimulator(result.answers);});

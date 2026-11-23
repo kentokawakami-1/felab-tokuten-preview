@@ -1111,6 +1111,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
 #library .delay-entry .de-num{color:var(--orange);text-shadow:none}
 #library .delay-entry .de-num small{color:var(--text-strong)}
 #library .delay-entry__lead,#library .delay-entry__summary{color:var(--muted)}
+.delay-entry__note{position:relative;z-index:1;margin:-4px 0 14px;font-size:10.5px;line-height:1.65;color:var(--dim,rgba(0,0,0,.5));text-align:left}
 #library .delay-entry .de-graph{opacity:.28;height:55%}
 #library .delay-entry .de-graph__a{stroke:var(--gold)}
 #library .delay-entry .de-graph__b{stroke:var(--orange)}
@@ -1297,6 +1298,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
       <div class="de-num"><span class="de-minus">−</span><span class="de-digits" id="delayEntryNum">???</span><small>万円</small></div>
       <p class="delay-entry__lead" id="delayEntryLead">4つの質問でわかります</p>
       <p class="delay-entry__summary" id="delayEntrySummary" hidden></p>
+      <p class="delay-entry__note" id="delayEntryNote" hidden></p>
       <button class="btn btn-gold" id="delayEntryBtn" type="button">シミュレーションをやってみる</button>
       <button class="btn btn-ghost de-redo" id="delayEntryRedo" type="button" hidden>条件を変えてやり直す</button>
     </section>
@@ -1352,7 +1354,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
           <summary><span>5年ごとの推移を見る</span><svg class="ic" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
           <div class="tbl-wrap"><table id="simTable"></table></div>
         </details>
-        <p class="sim-note">毎月一定額を積み立て、月ごとの複利で計算した概算です。手数料は含みません。税金は売却時に増えた分へまとめてかかるものとして計算し、新NISAは生涯の投資枠1,800万円を超えた元本の分だけ課税としています。利回りは目安で、将来の成果を約束するものではありません。投資には元本割れのリスクがあります。</p>
+        <p class="sim-note">毎月一定額を積み立て、月ごとの複利で計算した概算です。手数料は含みません。税金は売却時に増えた分へまとめてかかるものとして計算し、新NISAは生涯の投資枠1,800万円を超えた元本の分だけ課税としています。「今のお金の価値で」は、設定した物価上昇率で割り戻した金額です。利回りは目安で、将来の成果を約束するものではありません。特定の金融商品の購入を勧めるものではありません。投資には元本割れのリスクがあります。</p>
       </div>
     </section>
 
@@ -1380,7 +1382,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
       <span class="delay-step" id="delayStep"></span>
     </div>
     <div class="delay-body" id="delayBody"></div>
-    <p class="delay-legal">年利5%で運用できたと仮定した計算です。将来の成果を約束するものではなく、特定の金融商品の購入を勧めるものでもありません。投資には元本割れのリスクがあります。</p>
+    <p class="delay-legal" id="delayLegal"></p>
   </div>
 </section>
 
@@ -2455,7 +2457,7 @@ function updateDelayEntry(){
   const done=state.delay&&state.delay.answers&&state.delay.result;
   const lead=document.getElementById("delayEntryLead"),summary=document.getElementById("delayEntrySummary"),btn=document.getElementById("delayEntryBtn"),num=document.getElementById("delayEntryNum"),box=document.getElementById("delayEntry");
   if(!lead||!summary||!btn||!num)return;
-  lead.hidden=!!done;summary.hidden=true;{const redo=document.getElementById("delayEntryRedo");if(redo)redo.hidden=!done;}clearInterval(delayEntryRoll);delayEntryRoll=null;box.classList.toggle("is-done",!!done);
+  lead.hidden=!!done;summary.hidden=true;{const note=document.getElementById("delayEntryNote");if(note){note.hidden=!done;if(done)note.textContent=delayConditionText({...state.delay.answers,endAge:delayEndAge(+state.delay.answers.age)});}}{const redo=document.getElementById("delayEntryRedo");if(redo)redo.hidden=!done;}clearInterval(delayEntryRoll);delayEntryRoll=null;box.classList.toggle("is-done",!!done);
   if(done){
     const r=state.delay.result;num.textContent=delayMan(r.differences[12]).toLocaleString("ja-JP");
     summary.textContent="";btn.textContent="もう一度見る";
@@ -2471,7 +2473,12 @@ function startDelay(replay=false){
   if(replay&&state.delay&&state.delay.answers){delayDraft={...state.delay.answers};show("delay");startDelayPlayback();return;}
   delayDraft=delayDefaults();delayQi=0;show("delay");renderDelayQuestion();
 }
-function renderDelayQuestion(){
+function delayConditionText(a){
+  const head=a?`毎月${(a.monthly/10000).toLocaleString("ja-JP")}万円を年利5%（月ごとの複利）で${a.endAge}歳まで積み立てた場合の概算です。`:"年利5%（月ごとの複利）で積み立てた場合の概算です。";
+  return head+"手数料・税金・物価の変動は含みません。将来の成果を約束するものではなく、特定の金融商品の購入を勧めるものでもありません。投資には元本割れのリスクがあります。";
+}
+function setDelayLegal(a){ const el=document.getElementById("delayLegal"); if(el) el.textContent=delayConditionText(a); }
+function renderDelayQuestion(){setDelayLegal(null);
   clearDelayPlayback();delayScene=-1;document.getElementById("delayTop").hidden=false;
   document.getElementById("delayProgress").innerHTML=DELAY_QUESTIONS.map((_,i)=>`<i class="${i<=delayQi?"on":""}"></i>`).join("");
   document.getElementById("delayStep").textContent=`${delayQi+1} / ${DELAY_QUESTIONS.length}`;
@@ -2538,7 +2545,7 @@ function bindDelayExit(result){
   document.getElementById("delayHome").addEventListener("click",e=>{e.stopPropagation();clearDelayPlayback();show("library");window.scrollTo(0,0);});
 }
 function renderDelayReduced(){
-  const result=calculateDelayResults(delayDraft);finishDelay(result);
+  const result=calculateDelayResults(delayDraft);finishDelay(result);setDelayLegal(result.answers);
   document.getElementById("delayBody").innerHTML=`<div class="delay-play"><div class="delay-scene"><p class="delay-kicker">今日始めた場合・${result.answers.endAge}歳時点</p><div class="delay-hero-num">${delayMan(result.today).toLocaleString("ja-JP")}<small>万円</small></div><p class="delay-subline">${delayGoalLine(result)}</p><div class="delay-diffs">${delayDiffRows(result)}</div><p class="delay-focus-note">${selectedDelayNote(result)}</p>${delayReframes(result)}${delayExitHtml()}</div></div>`;document.querySelectorAll("#delayBody [data-to]").forEach(e=>{e.textContent=Number(e.dataset.to).toLocaleString("ja-JP");});bindDelayExit(result);
 }
 // 1文字ずつ跳ねて出る見出し
@@ -2553,7 +2560,7 @@ function delayPunch(big){ const p=document.getElementById("delayPlay"); if(!p)re
 const DELAY_READY_MS=[2900,4600,3400,2700];
 function nextDelayScene(){
   if(delaySceneLock)return;delaySceneLock=true;clearDelayPlayback();delayScene++;
-  const result=calculateDelayResults(delayDraft),body=document.getElementById("delayBody");let html="";
+  const result=calculateDelayResults(delayDraft),body=document.getElementById("delayBody");let html="";setDelayLegal(result.answers);
   const who=state.name?`${escapeHtml(state.name)}さんが`:"あなたが";
   if(delayScene===0)html=`<div class="delay-scene"><p class="delay-kicker dm-in">${who}</p><h1>${kt("今日はじめたら")}</h1><p class="dm-label dm-in" style="--d:.75s">${result.answers.endAge}歳のとき</p><div class="delay-hero-num dm-hero"><span id="delayOdo">0</span><small>万円</small></div><p class="delay-subline dm-in" style="--d:2.5s">${delayGoalLine(result)}</p></div>`;
   if(delayScene===1)html=`<div class="delay-scene"><h1>${kt("でも、","kt-big")}<br>${kt("先延ばしすると…","",.55)}</h1><div class="delay-calendar dm-in" style="--d:1.1s"><span id="delayYear">${new Date().getFullYear()}</span><small>年</small></div><div class="dm-in" style="--d:1.2s">${delayGraphSvg(result)}</div></div>`;

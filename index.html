@@ -2475,7 +2475,7 @@ function startDelay(replay=false){
 }
 function delayConditionText(a){
   const head=a?`${a.age}歳から${a.endAge}歳までの${a.endAge-a.age}年間、毎月${(a.monthly/10000).toLocaleString("ja-JP")}万円を年利5%（月ごとの複利）で積み立てた場合の概算です（${a.age>=75?"70代以上":Math.floor(a.age/10)*10+"代"}は${a.age}歳として計算）。`:"年利5%（月ごとの複利）で積み立てた場合の概算です。";
-  return head+"手数料・税金・物価の変動は含みません。将来の成果を約束するものではなく、特定の金融商品の購入を勧めるものでもありません。投資には元本割れのリスクがあります。";
+  return head+(a?"差額には、積み立てなかった元本の分も含みます。":"")+"手数料・税金・物価の変動は含みません。将来の成果を約束するものではなく、特定の金融商品の購入を勧めるものでもありません。投資には元本割れのリスクがあります。";
 }
 function setDelayLegal(a){ const el=document.getElementById("delayLegal"); if(el) el.textContent=delayConditionText(a); }
 function renderDelayQuestion(){setDelayLegal(null);
@@ -2759,7 +2759,7 @@ function insights(R){
   }
   const draw=R.net*.04/12;
   cards.push(`<div class="ins"><small><svg class="ic" aria-hidden="true"><use href="#i-coin"/></svg>毎月受け取れる目安</small><b>${fmtMan(draw)}<span>万円</span></b><p>年4%ずつ取り崩しながら運用を続けた場合</p></div>`);
-  if(sim.years>5){ const late=simulate(sim,{years:sim.years-5}); cards.push(`<div class="ins"><small><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>始めるのが5年遅れると</small><b>−${fmtMan(R.net-late.net)}<span>万円</span></b><p>同じ積立額で${sim.years-5}年だけ続けた場合との差</p></div>`); }
+  if(sim.years>5){ const late=simulate(sim,{years:sim.years-5}); cards.push(`<div class="ins"><small><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>始めるのが5年遅れると</small><b>−${fmtMan(R.net-late.net)}<span>万円</span></b><p>同じ積立額で${sim.years-5}年だけ続けた場合との差（積み立てなかった元本の分も含みます）</p></div>`); }
   const taxSave=R.taxIfTaxable-R.tax;
   if(sim.acct==="nisa" && taxSave>0) cards.push(`<div class="ins"><small><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>新NISAで税金がかからない分</small><b>${fmtMan(taxSave)}<span>万円</span></b><p>課税口座で同じ運用をした場合との差</p></div>`);
   const perDay=sim.monthly/30;

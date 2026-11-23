@@ -1354,7 +1354,7 @@ body .toast i{width:28px;height:28px;border:1.5px solid #e67a6e;background:rgba(
           <summary><span>5年ごとの推移を見る</span><svg class="ic" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
           <div class="tbl-wrap"><table id="simTable"></table></div>
         </details>
-        <p class="sim-note">毎月一定額を積み立て、月ごとの複利で計算した概算です。手数料は含みません。税金は売却時に増えた分へまとめてかかるものとして計算し、新NISAは生涯の投資枠1,800万円を超えた元本の分だけ課税としています。「今のお金の価値で」は、設定した物価上昇率で割り戻した金額です。利回りは目安で、将来の成果を約束するものではありません。特定の金融商品の購入を勧めるものではありません。投資には元本割れのリスクがあります。</p>
+        <p class="sim-note">毎月一定額を積み立て、月ごとの複利で計算した概算です。手数料は含みません。新NISAは入れた順に「1年360万円・生涯1,800万円」の枠を使い、枠を超えた分は課税口座で運用したものとして、売却時に増えた分へ20.315%の税金をまとめてかけています。「今のお金の価値で」は、設定した物価上昇率で割り戻した金額です。利回りは目安で、将来の成果を約束するものではありません。特定の金融商品の購入を勧めるものではありません。投資には元本割れのリスクがあります。</p>
       </div>
     </section>
 
@@ -2474,7 +2474,7 @@ function startDelay(replay=false){
   delayDraft=delayDefaults();delayQi=0;show("delay");renderDelayQuestion();
 }
 function delayConditionText(a){
-  const head=a?`毎月${(a.monthly/10000).toLocaleString("ja-JP")}万円を年利5%（月ごとの複利）で${a.endAge}歳まで積み立てた場合の概算です。`:"年利5%（月ごとの複利）で積み立てた場合の概算です。";
+  const head=a?`${a.age}歳から${a.endAge}歳までの${a.endAge-a.age}年間、毎月${(a.monthly/10000).toLocaleString("ja-JP")}万円を年利5%（月ごとの複利）で積み立てた場合の概算です（${a.age>=75?"70代以上":Math.floor(a.age/10)*10+"代"}は${a.age}歳として計算）。`:"年利5%（月ごとの複利）で積み立てた場合の概算です。";
   return head+"手数料・税金・物価の変動は含みません。将来の成果を約束するものではなく、特定の金融商品の購入を勧めるものでもありません。投資には元本割れのリスクがあります。";
 }
 function setDelayLegal(a){ const el=document.getElementById("delayLegal"); if(el) el.textContent=delayConditionText(a); }
@@ -2505,7 +2505,7 @@ function startDelayPlayback(){
 function finishDelay(result){state.delay={answers:{...delayDraft},result,completedAt:Date.now()};save();updateDelayEntry();}
 function delayGoalLine(result){
   const p=result.projections[0],target=delayMan(result.answers.goal).toLocaleString("ja-JP");
-  if(p.goalMonth!==null){const age=Math.floor(p.reachedAge),months=Math.round((p.reachedAge-age)*12);return `目標の${target}万円には、計算上${age}歳${months?months+"か月":""}で届きます。`;}
+  if(p.goalMonth!==null){const y=Math.floor(p.goalMonth/12),mo=p.goalMonth%12;return `目標の${target}万円には、計算上 今から${y}年${mo?mo+"か月":""}で届きます。`;}
   return `目標は${target}万円。${result.answers.endAge}歳時点では目標まであと${delayMan(Math.max(0,result.answers.goal-result.today)).toLocaleString("ja-JP")}万円です。`;
 }
 function delayGraphSvg(result){
@@ -2669,16 +2669,20 @@ placeAcct();
 const TAX=.20315, NISA_LIFE=18000000, NISA_YEAR=3600000;
 function simulate(p,overrides={}){
   p={...p,...overrides};
-  const r=p.rate/100/12; let bal=p.init, prin=p.init, m=p.monthly, goalMonth=null;
+  const r=p.rate/100/12; let m=p.monthly, goalMonth=null;
+  // 新NISAは入れた順に「1年360万円・生涯1,800万円」の枠を使い、枠を超えた分は課税口座で運用する
+  let lifeLeft=p.acct==="nisa"?NISA_LIFE:0, yearLeft=Math.min(NISA_YEAR,lifeLeft), balN=0, balT=0, prinN=0, prinT=0;
+  const put=x=>{ const a=Math.max(0,Math.min(x,yearLeft,lifeLeft)); balN+=a; prinN+=a; yearLeft-=a; lifeLeft-=a; balT+=x-a; prinT+=x-a; };
+  put(p.init);
+  let bal=balN+balT, prin=prinN+prinT;
   const rows=[{y:0,bal,prin}];
   for(let mo=1;mo<=p.years*12;mo++){
-    bal=bal*(1+r)+m; prin+=m;
+    balN*=1+r; balT*=1+r; put(m); bal=balN+balT; prin=prinN+prinT;
     if(goalMonth===null && p.goal>0 && bal>=p.goal) goalMonth=mo;
-    if(mo%12===0){ rows.push({y:mo/12,bal,prin}); m*=1+p.raise/100; }
+    if(mo%12===0){ rows.push({y:mo/12,bal,prin}); m*=1+p.raise/100; yearLeft=Math.min(NISA_YEAR,lifeLeft); }
   }
   const gain=Math.max(0,bal-prin);
-  const share = p.acct==="tax" ? 1 : (prin>NISA_LIFE ? (prin-NISA_LIFE)/prin : 0);
-  const tax=gain*share*TAX, net=bal-tax, real=net/Math.pow(1+p.infl/100,p.years);
+  const tax=Math.max(0,balT-prinT)*TAX, net=bal-tax, real=net/Math.pow(1+p.infl/100,p.years);
   return {bal,prin,gain,tax,net,real,rows,goalMonth,taxIfTaxable:gain*TAX};
 }
 function setSim(m){ setField("monthly",m,{quiet:true}); updateSim(); }
@@ -2695,8 +2699,8 @@ function updateSim(){
   kv("kvPrin",R.prin); kv("kvGain",R.gain,"+"); kv("kvTax",R.tax); kv("kvReal",R.real);
   // 注意書き
   const yearly=sim.monthly*12;
-  document.getElementById("note-monthly").textContent = sim.acct==="nisa" && yearly>NISA_YEAR ? "新NISAで1年に入れられるのは360万円（月30万円）までです" : "";
-  document.getElementById("note-init").textContent = sim.acct==="nisa" && sim.init>NISA_YEAR ? "新NISAで1年に入れられるのは360万円までです（この計算では最初に全額入れたものとして扱っています）" : "";
+  document.getElementById("note-monthly").textContent = sim.acct==="nisa" && yearly>NISA_YEAR ? "新NISAで1年に入れられるのは360万円（月30万円）までです（超えた分は課税口座で運用する計算です）" : "";
+  document.getElementById("note-init").textContent = sim.acct==="nisa" && sim.init>NISA_YEAR ? "新NISAで1年に入れられるのは360万円までです（超えた分は課税口座で運用する計算です）" : "";
   drawChart(R);
   insights(R);
   table(R);
@@ -2730,7 +2734,7 @@ function drawChart(R){
     const px=y/sim.years*r.width; const {Y,H}=svg._map; const py=Y(row.bal)/H*r.height;
     cur.style.left=px+"px"; cur.querySelector("i").style.top=(py-5)+"px";
     const real=row.bal/Math.pow(1+sim.infl/100,y);
-    tip.innerHTML=`<em>${y===0?"今":y+"年後"}</em><br><b>${fmtMan(row.bal)}</b>万円<br><em>元本 ${fmtMan(row.prin)}万円・今の価値 ${fmtMan(real)}万円</em>`;
+    tip.innerHTML=`<em>${y===0?"今":y+"年後"}</em><br><b>${fmtMan(row.bal)}</b>万円<br><em>元本 ${fmtMan(row.prin)}万円・今の価値 ${fmtMan(real)}万円（税引き前）</em>`;
     const tw=tip.offsetWidth; tip.style.left=Math.min(r.width-tw,Math.max(0,px-tw/2))+"px";
     if(y!==last){ last=y; tone({freq:900+y*12,dur:.012,type:"sine",vol:.025}); vibrate(2); }
   };
@@ -2741,17 +2745,17 @@ function drawChart(R){
 function neededMonthly(){
   if(!(sim.goal>0)) return null;
   let lo=0, hi=2000000;
-  if(simulate(sim,{monthly:hi}).net<sim.goal) return null;
-  for(let i=0;i<30;i++){ const mid=(lo+hi)/2; if(simulate(sim,{monthly:mid}).net>=sim.goal) hi=mid; else lo=mid; }
+  if(simulate(sim,{monthly:hi}).bal<sim.goal) return null;
+  for(let i=0;i<30;i++){ const mid=(lo+hi)/2; if(simulate(sim,{monthly:mid}).bal>=sim.goal) hi=mid; else lo=mid; }
   return Math.ceil(hi/1000)*1000;
 }
 function insights(R){
   const cards=[];
   if(sim.goal>0){
     if(R.goalMonth){ const y=Math.floor(R.goalMonth/12), m=R.goalMonth%12;
-      cards.push(`<div class="ins wide"><small><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>目標の${fmtMan(sim.goal)}万円に届くまで</small><b>${y}<span>年</span>${m?` ${m}<span>か月</span>`:""}</b><p>この条件なら、${sim.years}年より${sim.years*12-R.goalMonth>0?"早く":""}目標に届く見込みです（税金を引く前の金額で判定）。</p></div>`);
+      cards.push(`<div class="ins wide"><small><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>目標の${fmtMan(sim.goal)}万円に届くまで</small><b>${y}<span>年</span>${m?` ${m}<span>か月</span>`:""}</b><p>この条件なら、${sim.years*12-R.goalMonth>0?`${sim.years}年より早く`:`${sim.years}年で`}目標に届く見込みです（税金を引く前の金額で判定）。</p></div>`);
     } else { const need=neededMonthly();
-      cards.push(`<div class="ins wide"><small><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>目標の${fmtMan(sim.goal)}万円に届くには</small><b>${need?fmtMan(need):"—"}<span>万円/月</span></b><p>${need?`今の条件のまま、毎月の積立を${fmtMan(need)}万円にすると${sim.years}年で届きます。`:"今の利回りと年数では届きにくい目標です。年数か利回りを見直してみてください。"}</p></div>`); }
+      cards.push(`<div class="ins wide"><small><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>目標の${fmtMan(sim.goal)}万円に届くには</small><b>${need?fmtMan(need):"—"}<span>万円/月</span></b><p>${need?`今の条件のまま、毎月の積立を${fmtMan(need)}万円にすると${sim.years}年で届きます（税金を引く前の金額で判定）。`:"今の利回りと年数では届きにくい目標です。年数か利回りを見直してみてください。"}</p></div>`); }
   }
   const draw=R.net*.04/12;
   cards.push(`<div class="ins"><small><svg class="ic" aria-hidden="true"><use href="#i-coin"/></svg>毎月受け取れる目安</small><b>${fmtMan(draw)}<span>万円</span></b><p>年4%ずつ取り崩しながら運用を続けた場合</p></div>`);

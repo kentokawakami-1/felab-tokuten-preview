@@ -2382,7 +2382,7 @@ document.getElementById("quizEntry").addEventListener("click",startQuiz);
    先延ばしの値段
    ========================================================= */
 const DELAY_QUESTIONS=[
-  {key:"age",title:"今の年齢を教えてください",options:[[18,"10代"],[22,"20代前半"],[27,"20代後半"],[32,"30代前半"],[37,"30代後半"],[45,"40代"],[55,"50代"]]},
+  {key:"age",title:"今の年齢を教えてください",options:[[18,"10代"],[25,"20代"],[35,"30代"],[45,"40代"],[55,"50代"],[65,"60代"],[75,"70代以上"]]},
   {key:"goal",title:"目標金額はいくらですか？",options:[[10000000,"1,000万円"],[20000000,"2,000万円"],[30000000,"3,000万円"],[50000000,"5,000万円"]]},
   {key:"monthly",title:"毎月、積み立てられそうな額は？",options:[[10000,"1万円"],[30000,"3万円"],[50000,"5万円"],[100000,"10万円"]]},
   {key:"start",title:"いつ始めるつもりですか？",options:[[6,"半年後"],[12,"1年後"],[36,"3年後"],[60,"5年後"],[120,"10年後"],[-1,"まだ決めていない"]]},
@@ -2394,7 +2394,8 @@ function futureValueMonthly(monthly,months,rate=5){
   const n=Math.max(0,Math.floor(months)),r=rate/100/12;
   return n?(r?monthly*(Math.pow(1+r,n)-1)/r:monthly*n):0;
 }
-function calculateDelayProjection({age,monthly,goal,delayMonths=0,rate=5,endAge=65}){
+const delayEndAge=age=>Math.max(65,age+15); // 65歳時点。50代以上は15年後の年齢で比べる
+function calculateDelayProjection({age,monthly,goal,delayMonths=0,rate=5,endAge=delayEndAge(age)}){
   const months=Math.max(0,Math.round((endAge-age)*12-delayMonths));
   const amount=futureValueMonthly(monthly,months,rate);
   let balance=0,goalMonth=null,r=rate/100/12;
@@ -2405,7 +2406,7 @@ function calculateDelayProjection({age,monthly,goal,delayMonths=0,rate=5,endAge=
   return {months,amount,goalMonth,reachedAge:goalMonth===null?null:age+(delayMonths+goalMonth)/12};
 }
 function calculateDelayResults(input){
-  const answers={age:+input.age,goal:+input.goal,monthly:+input.monthly,start:+input.start};
+  const answers={age:+input.age,goal:+input.goal,monthly:+input.monthly,start:+input.start};answers.endAge=delayEndAge(answers.age);
   const delays=[0,1,6,12,24,36,60,120],projections={};
   delays.forEach(m=>projections[m]=calculateDelayProjection({...answers,delayMonths:m}));
   const today=projections[0].amount,differences={};
@@ -2418,9 +2419,9 @@ const delayMan=v=>Math.round(v/10000);
 const delayYen=v=>Math.round(v).toLocaleString("ja-JP");
 function nearestDelayOption(values,target){return values.reduce((a,b)=>Math.abs(b-target)<Math.abs(a-target)?b:a);}
 function delayDefaults(){
-  const ageMap={"10s":18,"20s":27,"30s":32,"40s":45,"50s":55,"60s":55,"70s":55};
+  const ageMap={"10s":18,"20s":25,"30s":35,"40s":45,"50s":55,"60s":65,"70s":75};
   const typeMonthly=state.result&&TYPES[state.result.type]?TYPES[state.result.type].monthly:30000;
-  return {age:ageMap[state.answers&&state.answers.age]||32,goal:20000000,monthly:nearestDelayOption([10000,30000,50000,100000],typeMonthly),start:12};
+  return {age:ageMap[state.answers&&state.answers.age]||35,goal:20000000,monthly:nearestDelayOption([10000,30000,50000,100000],typeMonthly),start:12};
 }
 let delayEntryRoll=null;
 function updateDelayEntry(){
@@ -2471,11 +2472,11 @@ function finishDelay(result){state.delay={answers:{...delayDraft},result,complet
 function delayGoalLine(result){
   const p=result.projections[0],target=delayMan(result.answers.goal).toLocaleString("ja-JP");
   if(p.goalMonth!==null){const age=Math.floor(p.reachedAge),months=Math.round((p.reachedAge-age)*12);return `目標の${target}万円には、計算上${age}歳${months?months+"か月":""}で届きます。`;}
-  return `目標は${target}万円。65歳時点では目標まであと${delayMan(Math.max(0,result.answers.goal-result.today)).toLocaleString("ja-JP")}万円です。`;
+  return `目標は${target}万円。${result.answers.endAge}歳時点では目標まであと${delayMan(Math.max(0,result.answers.goal-result.today)).toLocaleString("ja-JP")}万円です。`;
 }
 function delayGraphSvg(result){
   // 金＝今日から／灰＝選んだ時期から／点線＝5年遅れ。金と灰のあいだを塗って、右端に差額を書く
-  const total=Math.max(1,(65-result.answers.age)*12),chosen=result.answers.start===-1?36:result.answers.start,late=chosen>0?chosen:12;
+  const total=Math.max(1,(result.answers.endAge-result.answers.age)*12),chosen=result.answers.start===-1?36:result.answers.start,late=chosen>0?chosen:12;
   const points=Array.from({length:25},(_,i)=>Math.round(total*i/24)),N=points.length-1;
   const fvAt=d=>points.map(m=>futureValueMonthly(result.answers.monthly,Math.max(0,m-d),5));
   const gold=fvAt(0),gray=fvAt(late),far=fvAt(60);
@@ -2483,13 +2484,13 @@ function delayGraphSvg(result){
   const area=path(gold)+" "+gray.map((v,i)=>[x(i),y(v)]).reverse().map(p=>`L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ")+" Z";
   const lateLabel=result.answers.start===-1?"仮に3年後から":late===6?"半年後から":`${late/12}年後から`;
   const diff=delayMan(gold[N]-gray[N]).toLocaleString("ja-JP"), showFar=late<60 && total>72;
-  return `<svg class="delay-chart" viewBox="0 0 320 158" role="img" aria-label="今日始めた場合と先延ばしした場合の推移"><line class="delay-chart-grid" x1="18" y1="142" x2="302" y2="142"/><line class="delay-chart-grid" x1="18" y1="84" x2="302" y2="84"/><path class="delay-chart-gap" d="${area}"/>${showFar?`<path class="delay-chart-far" pathLength="1" d="${path(far)}"/>`:""}<path class="delay-chart-late" pathLength="1" d="${path(gray)}"/><path class="delay-chart-now" pathLength="1" d="${path(gold)}"/><circle class="delay-chart-dot-late" cx="302" cy="${y(gray[N]).toFixed(1)}" r="4"/><circle class="delay-chart-dot-now" cx="302" cy="${y(gold[N]).toFixed(1)}" r="4"/></svg><p class="delay-chart-diff">65歳時点の差 <b>−${diff}<small>万円</small></b></p><div class="delay-legend"><span><i></i>今日から</span><span><i></i>${lateLabel}</span>${showFar?`<span class="is-far"><i></i>5年後から</span>`:""}</div>`;
+  return `<svg class="delay-chart" viewBox="0 0 320 158" role="img" aria-label="今日始めた場合と先延ばしした場合の推移"><line class="delay-chart-grid" x1="18" y1="142" x2="302" y2="142"/><line class="delay-chart-grid" x1="18" y1="84" x2="302" y2="84"/><path class="delay-chart-gap" d="${area}"/>${showFar?`<path class="delay-chart-far" pathLength="1" d="${path(far)}"/>`:""}<path class="delay-chart-late" pathLength="1" d="${path(gray)}"/><path class="delay-chart-now" pathLength="1" d="${path(gold)}"/><circle class="delay-chart-dot-late" cx="302" cy="${y(gray[N]).toFixed(1)}" r="4"/><circle class="delay-chart-dot-now" cx="302" cy="${y(gold[N]).toFixed(1)}" r="4"/></svg><p class="delay-chart-diff">${result.answers.endAge}歳時点の差 <b>−${diff}<small>万円</small></b></p><div class="delay-legend"><span><i></i>今日から</span><span><i></i>${lateLabel}</span>${showFar?`<span class="is-far"><i></i>5年後から</span>`:""}</div>`;
 }
 function selectedDelayNote(result){
   const s=result.answers.start;
   if(s===-1)return "まだ決めていない場合を「仮に3年後なら」として強調しています。";
   if(s===0)return "「今月」を選んだあなたは、この差が開く前から始められます。";
-  if(s===6)return `半年後なら、65歳時点で約${delayMan(result.differences[6]).toLocaleString("ja-JP")}万円の差です。`;
+  if(s===6)return `半年後なら、${result.answers.endAge}歳時点で約${delayMan(result.differences[6]).toLocaleString("ja-JP")}万円の差です。`;
   return `${s/12}年後を選んだ場合を強調しています。`;
 }
 function delayDiffRows(result){
@@ -2511,7 +2512,7 @@ function bindDelayExit(result){
 }
 function renderDelayReduced(){
   const result=calculateDelayResults(delayDraft);finishDelay(result);
-  document.getElementById("delayBody").innerHTML=`<div class="delay-play"><div class="delay-scene"><p class="delay-kicker">今日始めた場合・65歳時点</p><div class="delay-hero-num">${delayMan(result.today).toLocaleString("ja-JP")}<small>万円</small></div><p class="delay-subline">${delayGoalLine(result)}</p><div class="delay-diffs">${delayDiffRows(result)}</div><p class="delay-focus-note">${selectedDelayNote(result)}</p>${delayReframes(result)}${delayExitHtml()}</div></div>`;document.querySelectorAll("#delayBody [data-to]").forEach(e=>{e.textContent=Number(e.dataset.to).toLocaleString("ja-JP");});bindDelayExit(result);
+  document.getElementById("delayBody").innerHTML=`<div class="delay-play"><div class="delay-scene"><p class="delay-kicker">今日始めた場合・${result.answers.endAge}歳時点</p><div class="delay-hero-num">${delayMan(result.today).toLocaleString("ja-JP")}<small>万円</small></div><p class="delay-subline">${delayGoalLine(result)}</p><div class="delay-diffs">${delayDiffRows(result)}</div><p class="delay-focus-note">${selectedDelayNote(result)}</p>${delayReframes(result)}${delayExitHtml()}</div></div>`;document.querySelectorAll("#delayBody [data-to]").forEach(e=>{e.textContent=Number(e.dataset.to).toLocaleString("ja-JP");});bindDelayExit(result);
 }
 // 1文字ずつ跳ねて出る見出し
 function kt(text,cls="",base=0){return `<span class="kt ${cls}" aria-label="${text}">`+[...text].map((c,n)=>`<span class="kt-c" aria-hidden="true" style="--i:${n};--b:${base}s">${c}</span>`).join("")+`</span>`;}
@@ -2527,9 +2528,9 @@ function nextDelayScene(){
   if(delaySceneLock)return;delaySceneLock=true;clearDelayPlayback();delayScene++;
   const result=calculateDelayResults(delayDraft),body=document.getElementById("delayBody");let html="";
   const who=state.name?`${escapeHtml(state.name)}さんが`:"あなたが";
-  if(delayScene===0)html=`<div class="delay-scene"><p class="delay-kicker dm-in">${who}</p><h1>${kt("今日はじめたら")}</h1><p class="dm-label dm-in" style="--d:.75s">65歳のとき</p><div class="delay-hero-num dm-hero"><span id="delayOdo">0</span><small>万円</small></div><p class="delay-subline dm-in" style="--d:2.5s">${delayGoalLine(result)}</p></div>`;
+  if(delayScene===0)html=`<div class="delay-scene"><p class="delay-kicker dm-in">${who}</p><h1>${kt("今日はじめたら")}</h1><p class="dm-label dm-in" style="--d:.75s">${result.answers.endAge}歳のとき</p><div class="delay-hero-num dm-hero"><span id="delayOdo">0</span><small>万円</small></div><p class="delay-subline dm-in" style="--d:2.5s">${delayGoalLine(result)}</p></div>`;
   if(delayScene===1)html=`<div class="delay-scene"><h1>${kt("でも、","kt-big")}<br>${kt("先延ばしすると…","",.55)}</h1><div class="delay-calendar dm-in" style="--d:1.1s"><span id="delayYear">${new Date().getFullYear()}</span><small>年</small></div><div class="dm-in" style="--d:1.2s">${delayGraphSvg(result)}</div></div>`;
-  if(delayScene===2)html=`<div class="delay-scene"><p class="delay-kicker dm-in">65歳時点の差</p><h1>${kt("始める時期だけで")}<br>${kt("これだけ変わる","kt-hot",.45)}</h1><div class="delay-diffs">${delayDiffRows(result)}</div><p class="delay-focus-note dm-in" style="--d:3.1s">${selectedDelayNote(result)}</p></div>`;
+  if(delayScene===2)html=`<div class="delay-scene"><p class="delay-kicker dm-in">${result.answers.endAge}歳時点の差</p><h1>${kt("始める時期だけで")}<br>${kt("これだけ変わる","kt-hot",.45)}</h1><div class="delay-diffs">${delayDiffRows(result)}</div><p class="delay-focus-note dm-in" style="--d:3.1s">${selectedDelayNote(result)}</p></div>`;
   if(delayScene===3)html=`<div class="delay-scene"><h1>${kt("待っている間も")}<br>${kt("差は開いていく","kt-hot",.4)}</h1>${delayReframes(result)}</div>`;
   if(delayScene>=4){finishDelay(result);html=delayExitHtml();}
   const bars=`<div class="dm-bars" aria-hidden="true">${[0,1,2,3,4].map(n=>`<i class="${n<delayScene?"done":n===delayScene?"now":""}"></i>`).join("")}</div>`;
@@ -2548,7 +2549,7 @@ function nextDelayScene(){
 }
 function applyDelayToSimulator(answers){
   clearDelayPlayback();
-  [["init",0],["monthly",answers.monthly],["years",Math.max(1,65-answers.age)],["rate",5],["goal",answers.goal]].forEach(([k,v])=>setField(k,v,{quiet:true}));
+  [["init",0],["monthly",answers.monthly],["years",Math.max(1,delayEndAge(answers.age)-answers.age)],["rate",5],["goal",answers.goal]].forEach(([k,v])=>setField(k,v,{quiet:true}));
   sim.acct="nisa";placeAcct();updateSim();show("library");
   requestAnimationFrame(()=>document.getElementById("simSec").scrollIntoView({behavior:reduceMotion()?"auto":"smooth",block:"start"}));
 }
